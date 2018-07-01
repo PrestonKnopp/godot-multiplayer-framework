@@ -18,8 +18,8 @@ func valid():
 
 func _update_my_data():
 	multiplayer.registry.observe(self, '_on_user_data', null, 'user')
-	multiplayer.registry.set_my_data('user', 'name', $ui/VBoxContainer/username.text)
-	multiplayer.registry.set_my_data('user', 'ready', false)
+	multiplayer.registry.set_my_data('user/name', $ui/VBoxContainer/username.text)
+	multiplayer.registry.set_my_data('user/ready', false)
 	call_deferred('refresh')
 
 
@@ -55,8 +55,8 @@ func refresh():
 			item.set_editable(0, true)
 
 		var data = multiplayer.registry.get_peer_data(peer_id)
-		var peer_name = data.get_value('user', 'name', peer_id)
-		var peer_ready = data.get_value('user', 'ready', false)
+		var peer_name = data.get_value('TODO', 'user/name', peer_id)
+		var peer_ready = data.get_value('TODO', 'user/ready', false)
 		item.set_text(0, str(peer_name))
 		item.set_checked(0, peer_ready)
 
@@ -70,11 +70,11 @@ func show_error(err):
 func _on_tree_item_edited():
 	var edited = find_node('Tree').get_edited()
 	print('item edited', edited)
-	multiplayer.registry.set_my_data('user', 'ready', edited.is_checked(0))
+	multiplayer.registry.set_my_data('user/ready', edited.is_checked(0))
 
 
-func _on_user_data(registry, peer_id, section, key, data_old, data_new):
-	prints('User Data Changed', peer_id, section, key, data_old, data_new)
+func _on_user_data(registry, peer_id, key, data_old, data_new):
+	prints('User Data Changed', peer_id, key, data_old, data_new)
 	call_deferred('refresh')
 	if peer_id == registry.get_my_id():
 		return

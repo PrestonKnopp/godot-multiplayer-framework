@@ -7,24 +7,97 @@ extends Node
 # ------------------------------------------------------------------------------
 
 
+class ObjectIndexPathMap:
+	var objects = []
+	var index = {}
+
+	func echo(indent=0):
+		"""
+		Print the structure of this ObjectIndexPathMap.
+		"""
+		var dent = ''
+		for i in indent:
+			dent += ' '
+		for k in index:
+			print(dent, '== %s ==' % k)
+			print(dent, '- ', index[k].objects)
+			index[k].echo(indent + 2)
+
+	func lookup(indices):
+		"""
+		Lookup objects that match indices path.
+
+		@indices An Array Type
+		    - Indices that form a path, similar to NodePath's names.
+		    - Does not use '*' wildcard. It will add undesired objects
+		      to the returned pool.
+		"""
+		return _lookup(indices, indices.size(), 0, [])
+
+	func _lookup(indices, size, idx, __objects):
+		"""
+		Lookup implementation.
+		"""
+		if idx >= size:
+			return __objects + objects
+		var front = indices[idx]
+		if index.has('*'):
+			__objects = index['*']._lookup(indices, size, idx + 1, __objects)
+		if index.has(front):
+			return index[front]._lookup(indices, size, idx + 1, __objects)
+		return __objects + objects
+
+	func add(indices, object):
+		"""
+		Add an object to be found when lookup matches with index.
+
+		@indices An Array Type
+		    - Indices that form a path, similar to NodePath's names.
+		    - An index can be any hashable type.
+		    - A special index, a '*' string, is a wildcard. It matches
+		      any index at the position of the star. The wildcard is
+		      only used for adding. Cannot be used for lookup.
+		    - Examples:
+			- [*,one] will match:
+			    - key/one
+			    - ace/one
+			    - two/one
+			  but will not match:
+			    - key/ace/one
+			    - key/two/one
+			    - key/two/butt/one
+			- [*,*,one] will match:
+			    - key/ace/one
+			    - key/two/one
+			- [one, *] will match everything following one:
+			    - one/star/dash
+			    - one/baked/apple
+			    - one/time/that/only/butts
+			- [*] will match everything
+		@object Object
+		    - The object to be mapped to indices.
+		"""
+		# assert(typeof(indices) == TYPE_ARRAY)
+		var map = self
+		for dex in indices:
+			if not map.index.has(dex):
+				map.index[dex] = get_script().new()
+			map = map.index[dex]
+		map.objects.append(object)
+
+
 class Registry extends Node:
 
 
 	class Undefined extends Object:
 		var undef = true
-	
+
 
 	# dict with format {peer_id : peer_data}
 	var registered = {}
-	# dict with format
-	var _observers = {
-		observers = [],
-		peer_ids = {},
-		sections = {},
-		keys = {}
-	}
+	var _observer_map = ObjectIndexPathMap.new()
+
 	# only used for client when it hasn't connected to host
-#	var _my_data_dirty = false
 	var _data_queue = []
 	var _connected = false
 
@@ -36,7 +109,7 @@ class Registry extends Node:
 
 	func _enter_tree():
 		name = get_parent().name + '.Registry'
-	
+
 
 	# ------------------------------------------------------------------------------
 	#                      Making Sure Registry Can Make RPC Calls
@@ -44,6 +117,9 @@ class Registry extends Node:
 
 
 	func network_peer_added():
+		"""
+		Call this after you set the SceneTree's network peer.
+		"""
 		print('Network Peer Added')
 		if is_host():
 			_connected = true
@@ -65,18 +141,16 @@ class Registry extends Node:
 			print('Registering From Host')
 			for p in registered:
 				print('Data For Peer[',p,']')
-				echo_cfg(get_peer_data(p))
 				rpc_id(peer_id, '__recieve_peer_data', p, get_peer_data(p))
 
 		registered[peer_id] = ConfigFile.new()
-	
+
 
 	remote func __recieve_peer_data(peer_id, peer_data):
 		# FIXME: ConfigFile is being sent as an empty object
 		#        try converting to and from dictionaries
 		print('Receiving Peer Data for peer: ', peer_id)
 		assert(peer_data is ConfigFile)
-		echo_cfg(peer_data)
 		registered[peer_id] = peer_data
 
 
@@ -89,8 +163,8 @@ class Registry extends Node:
 	# ------------------------------------------------------------------------------
 
 
-	func set_my_data(section, key, data):
-		set_peer_data(get_my_id(), section, key, data)
+	func set_my_data(keypath, data):
+		set_peer_data(get_my_id(), keypath, data)
 
 
 	func get_my_data():
@@ -105,99 +179,66 @@ class Registry extends Node:
 	#                                     Peer Data
 	# ------------------------------------------------------------------------------
 
-	
+
 	# -- Observer
 
-	func observe(obj, fun, peer_id=null, section=null, key=null):
+	func _make_observe_keypath_indices(peer_id, keypath):
+		if peer_id == null:
+			peer_id = '*'
+
+		var indices = [peer_id]
+		if keypath != null:
+			indices += Array(keypath.split('/'))
+		return indices
+
+
+	func observe(obj, fun, peer_id=null, keypath=null):
 		"""
-		Observer function will be passed: this, peer_id, section, and
-		key.
+		Observe data changes sent to peer_id at keypath. If both peer_id
+		and keypath are null observer will be notified of all data
+		changes.
+
+		Observer function will be passed: this, peer_id, keypath, old
+		data, and new data.
+
+		@obj Object
+		  The object to call @fun on
+		@fun String
+		  The function name to call on @obj
+		@peer_id int?
+		  The optional peer id to specifically observe
+		@keypath String?
+		  A string path format. i.e. 'my/data/to/track'
 		"""
-		# At least one optional arg must be specified
-		assert(!(peer_id == null and section == null and key == null))
-
-		var topic_dict = _observers
-		var topics = [peer_id, section, key]
-		var topic_keys = ['peer_ids', 'sections', 'keys']
-		for i in topics.size():
-			var topic = topics[i]
-			var topic_key = topic_keys[i]
-			if topic == null: continue
-			if not topic_dict[topic_key].has(topic):
-				topic_dict[topic_key][topic] = {
-					observers = []
-				}
-				for j in range(i + 1, topics.size()):
-					topic_dict[topic_key][topic][topic_keys[j]] = {
-						observers = []
-					}
-			topic_dict = topic_dict[topic_key][topic]
-
-			var nonnull_topic_exists = false
-			for j in range(i + 1, topics.size()):
-				if topics[j] != null:
-					nonnull_topic_exists = true
-					break
-			if not nonnull_topic_exists:
-				topic_dict['observers'].append(funcref(obj, fun))
-	
-
-	func echo_cfg(d):
-		for s in d.get_sections():
-			for k in d.get_section_keys(s):
-				print('\t%s.%s: %s' % [s,k,d.get_value(s,k)])
+		var indices = _make_observe_keypath_indices(peer_id, keypath)
+		_observer_map.add(indices, funcref(obj, fun))
 
 
-	func echo_dict(d, indent=0):
-		var dent = ''
-		for i in indent:
-			dent += ' '
-		var s = ''
-		for k in d:
-			s = '%s%s: ' % [dent, k]
-			if typeof(d[k]) == TYPE_DICTIONARY:
-				s += '{'
-				print(s)
-				echo_dict(d[k], indent + 2)
-				print(dent, '}')
-			else:
-				s += str(d[k])
-				print(s)
-
-
-	func _view(peer_id, section, key, data_old, data_new):
-		var tdict = _observers
-		var topics = [peer_id, section, key]
-		var topic_keys = ['peer_ids', 'sections', 'keys']
-		for i in topics.size():
-			var t = topics[i]
-			var tkey = topic_keys[i]
-			if t == null: continue
-			if tdict.has(tkey) and tdict[tkey].has(t):
-				tdict = tdict[tkey][t]
-
-		if tdict.has('observers'):
-			for observer in tdict['observers']:
-				observer.call_func(self, peer_id, section, key, data_old, data_new)
+	func _view(peer_id, keypath, data_old, data_new):
+		var indices = _make_observe_keypath_indices(peer_id, keypath)
+		var observers = _observer_map.lookup(indices)
+		for observer in observers:
+			observer.call_func(self, peer_id, keypath, data_old, data_new)
 
 	# -- End Observer
 
 
-	func set_peer_data(peer_id, section, key, data):
+	func set_peer_data(peer_id, keypath, data):
 		""" synced """
 		assert(peer_id != null)
-		assert(section != null and typeof(section) == TYPE_STRING)
-		assert(key != null and typeof(key) == TYPE_STRING)
+		assert(keypath != null and typeof(keypath) == TYPE_STRING)
 		if is_host() or _connected:
-			rpc('__set_peer_data', peer_id, section, key, data)
+			rpc('__set_peer_data', peer_id, keypath, data)
 		else:
-			_data_queue.append({peer_id=peer_id, section=section, key=key, data=data})
+			_data_queue.append({peer_id=peer_id, keypath=keypath, data=data})
 
 
-	sync func __set_peer_data(peer_id, section, key, data):
+	sync func __set_peer_data(peer_id, keypath, data):
 		var cfg = registered[peer_id]
-		_view(peer_id, section, key, cfg.get_value(section, key, Undefined.new()), data)
-		cfg.set_value(section, key, data)
+		_view(peer_id, keypath, cfg.get_value('TODO', keypath,
+		Undefined.new()), data)
+		# TODO: transition away from configfile
+		cfg.set_value('TODO', keypath, data)
 
 
 	func get_peer_data(peer_id):
@@ -236,14 +277,14 @@ class Registry extends Node:
 		for peer_id in registered:
 			if peer_id in blacklist: continue
 			rpc_id(peer_id, var_name, var_value)
-	
+
 	# Queue
 	func flush_queue():
 		print('Flushing Queue')
 		for item in _data_queue:
 			print('\t', item)
-			set_peer_data(item.peer_id, item.section, item.key, item.data)
-	
+			set_peer_data(item.peer_id, item.keypath, item.data)
+
 	# Callbacks
 	func _on_connected_to_server():
 		print(name, ' has connected successfully... flushing queue.')

@@ -16,6 +16,6 @@ func _iteration(delta):
 		return
 	time = 0
 	var client = get_root().get_child(0)
-	client.registry.set_peer_data(1, 'hello', 'world', 'ThisHelloWorldString')
-	client.registry.set_peer_data(1, 'hello', 'world/buttface', 'ThisHelloWorldString')
+	client.registry.set_peer_data(1, 'hello/world', 'ThisHelloWorldString')
+	client.registry.set_peer_data(1, 'hello/world/buttface', 'ThisHelloWorldString')
 	print('Registry:\n', client.registry.registered)
