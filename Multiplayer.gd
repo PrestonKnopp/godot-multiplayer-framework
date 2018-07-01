@@ -89,12 +89,18 @@ class ObjectIndexPathMap:
 class Registry extends Node:
 
 
-	class Undefined extends Object:
-		var undef = true
+	class Undefined:
+		extends Reference
+
+
+	# Used to represent peer data that has not been defined yet
+	var UNDEFINED = Undefined.new() setget ,get_undefined
+	func get_undefined(): return UNDEFINED
 
 
 	# dict with format {peer_id : peer_data}
 	var registered = {}
+	# map of peer_data paths to observers
 	var _observer_map = ObjectIndexPathMap.new()
 
 	# only used for client when it hasn't connected to host
@@ -141,17 +147,22 @@ class Registry extends Node:
 			print('Registering From Host')
 			for p in registered:
 				print('Data For Peer[',p,']')
-				rpc_id(peer_id, '__recieve_peer_data', p, get_peer_data(p))
+				rpc_id(peer_id, '__recieve_peer_data', p, registered[p])
 
-		registered[peer_id] = ConfigFile.new()
+		registered[peer_id] = {}
 
 
 	remote func __recieve_peer_data(peer_id, peer_data):
 		# FIXME: ConfigFile is being sent as an empty object
 		#        try converting to and from dictionaries
+		assert(typeof(peer_data) == TYPE_DICTIONARY)
 		print('Receiving Peer Data for peer: ', peer_id)
-		assert(peer_data is ConfigFile)
+		print('- Recieved Data: ', peer_data)
 		registered[peer_id] = peer_data
+
+		# notifiy observers
+		for keypath in peer_data:
+			_view(peer_id, keypath, UNDEFINED, peer_data[keypath])	
 
 
 	func unregister(peer_id):
@@ -167,8 +178,8 @@ class Registry extends Node:
 		set_peer_data(get_my_id(), keypath, data)
 
 
-	func get_my_data():
-		return registered[get_my_id()]
+	func get_my_data(keypath, default=UNDEFINED):
+		return get_peer_data(get_my_id(), keypath, default)
 
 
 	func get_my_id():
@@ -234,16 +245,14 @@ class Registry extends Node:
 
 
 	sync func __set_peer_data(peer_id, keypath, data):
-		var cfg = registered[peer_id]
-		_view(peer_id, keypath, cfg.get_value('TODO', keypath,
-		Undefined.new()), data)
-		# TODO: transition away from configfile
-		cfg.set_value('TODO', keypath, data)
+		_view(peer_id, keypath, get_peer_data(peer_id, keypath), data)
+		registered[peer_id][keypath] = data
 
 
-	func get_peer_data(peer_id):
+	func get_peer_data(peer_id, keypath, default=Undefined.new()):
 		assert(peer_id in registered)
-		return registered[peer_id]
+		var dict = registered[peer_id]
+		return dict[keypath] if dict.has(keypath) else default
 
 
 	# ------------------------------------------------------------------------------
