@@ -153,8 +153,6 @@ class Registry extends Node:
 
 
 	remote func __recieve_peer_data(peer_id, peer_data):
-		# FIXME: ConfigFile is being sent as an empty object
-		#        try converting to and from dictionaries
 		assert(typeof(peer_data) == TYPE_DICTIONARY)
 		print('Receiving Peer Data for peer: ', peer_id)
 		print('- Recieved Data: ', peer_data)
@@ -238,15 +236,21 @@ class Registry extends Node:
 		""" synced """
 		assert(peer_id != null)
 		assert(keypath != null and typeof(keypath) == TYPE_STRING)
-		if is_host() or _connected:
-			rpc('__set_peer_data', peer_id, keypath, data)
+		if is_host():
+			__set_peer_data(peer_id, keypath, data)
+		elif _connected:
+			rpc_id(1, '__set_peer_data', peer_id, keypath, data)
 		else:
 			_data_queue.append({peer_id=peer_id, keypath=keypath, data=data})
 
 
-	sync func __set_peer_data(peer_id, keypath, data):
+	remote func __set_peer_data(peer_id, keypath, data):
 		_view(peer_id, keypath, get_peer_data(peer_id, keypath), data)
 		registered[peer_id][keypath] = data
+		if is_host():
+			for pid in registered:
+				if pid == get_my_id(): continue
+				rpc_id(pid, '__set_peer_data', peer_id, keypath, data)
 
 
 	func get_peer_data(peer_id, keypath, default=Undefined.new()):
@@ -289,9 +293,9 @@ class Registry extends Node:
 
 	# Queue
 	func flush_queue():
-		print('Flushing Queue')
+		print('Flushing Queue:')
 		for item in _data_queue:
-			print('\t', item)
+			print('\t- Item ', item)
 			set_peer_data(item.peer_id, item.keypath, item.data)
 
 	# Callbacks
