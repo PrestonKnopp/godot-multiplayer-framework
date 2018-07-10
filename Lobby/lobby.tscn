@@ -133,6 +133,7 @@ align = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ui/VBoxContainer" index="2"]
 
+editor/display_folded = true
 anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
@@ -239,9 +240,9 @@ wait_time = 2.0
 one_shot = true
 autostart = false
 
-[connection signal="pressed" from="ui/VBoxContainer/HBoxContainer/host_butt" to="." method="host"]
+[connection signal="pressed" from="ui/VBoxContainer/HBoxContainer/host_butt" to="." method="start" binds= [ 0 ]]
 
-[connection signal="pressed" from="ui/VBoxContainer/HBoxContainer/join_butt" to="." method="join"]
+[connection signal="pressed" from="ui/VBoxContainer/HBoxContainer/join_butt" to="." method="start" binds= [ 1 ]]
 
 [connection signal="item_edited" from="ui/VBoxContainer/VBoxContainer/Tree" to="." method="_on_tree_item_edited"]
 

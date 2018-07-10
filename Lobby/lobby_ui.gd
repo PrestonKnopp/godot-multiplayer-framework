@@ -8,31 +8,22 @@ func _ready():
 	refresh()
 
 
-func valid():
+func _peers_changed():
+	refresh()
+
+
+func _prestart(connection_type):
 	if $ui/VBoxContainer/username.text == '':
 		show_error('Invalid Username')
-		return false
-	$ui/VBoxContainer/username.editable = false
-	return true
+		start_cancel()
+	else:
+		$ui/VBoxContainer/username.editable = false
 
 
-func _update_my_data():
+func _started():
 	multiplayer.registry.observe(self, '_on_user_data', null, 'user')
 	multiplayer.registry.set_my_data('user/name', $ui/VBoxContainer/username.text)
 	multiplayer.registry.set_my_data('user/ready', false)
-	call_deferred('refresh')
-
-
-func host():
-	if not valid(): return
-	.host()
-	_update_my_data()
-
-
-func join():
-	if not valid(): return
-	.join()
-	_update_my_data()
 
 
 func refresh():
