@@ -248,9 +248,7 @@ class Registry extends Node:
 		_view(peer_id, keypath, get_peer_data(peer_id, keypath), data)
 		registered[peer_id][keypath] = data
 		if is_host():
-			for pid in registered:
-				if pid == get_my_id(): continue
-				rpc_id(pid, '__set_peer_data', peer_id, keypath, data)
+			broadcast(self, '__set_peer_data', [peer_id, keypath, data], [get_my_id()])
 
 
 	func get_peer_data(peer_id, keypath, default=Undefined.new()):
@@ -267,12 +265,14 @@ class Registry extends Node:
 	func is_host():
 		return get_tree().is_network_server()
 
-	func host_send(func_name, func_arguments):
-		rpc_id(1, func_name, func_arguments)
+	func host_send(from_obj, to_func, with_arguments=[]):
+		var obj = self if from_obj == null else from_obj
+		return obj.callv('rpc_id', [1, to_func] + with_arguments)
 
 
-	func host_set(var_name, var_value):
-		rset_id(1, var_name, var_value)
+	func host_set(from_obj, var_name, var_value):
+		var obj = self if from_obj == null else from_obj
+		return obj.rset_id(1, var_name, var_value)
 
 
 	# ------------------------------------------------------------------------------
@@ -280,16 +280,18 @@ class Registry extends Node:
 	# ------------------------------------------------------------------------------
 
 
-	func broadcast(func_name, func_arguments, blacklist=[]):
+	func broadcast(from_obj, to_func, with_arguments=[], blacklist=[]):
+		var obj = self if from_obj == null else from_obj
 		for peer_id in registered:
 			if peer_id in blacklist: continue
-			rpc_id(peer_id, func_name, func_arguments)
+			obj.callv('rpc_id', [peer_id, to_func] + with_arguments)
 
 
-	func broadcast_set(var_name, var_value, blacklist=[]):
+	func broadcast_set(from_obj, var_name, var_value, blacklist=[]):
+		var obj = self if from_obj == null else from_obj
 		for peer_id in registered:
 			if peer_id in blacklist: continue
-			rpc_id(peer_id, var_name, var_value)
+			obj.rset_id(peer_id, var_name, var_value)
 
 	# Queue
 	func flush_queue():
