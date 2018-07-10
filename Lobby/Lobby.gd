@@ -32,7 +32,8 @@ var _start_cancelled = false
 
 func start(connection_type):
 	"""
-	Make connection type. First calls _prestart to check if can start.
+	Make connection type. First calls _prestart to check if can start. And
+	to do any setup.
 	"""
 
 	# Check start conditions
@@ -48,6 +49,7 @@ func start(connection_type):
 		JOIN: _setup_multiplayer(Multiplayer.make_client())
 		_: print('Lobby start received invalid connection_type: ', connection_type)
 	
+	multiplayer.start()
 	_started()
 	emit_signal('started', self)
 	return OK
@@ -71,19 +73,17 @@ func _setup_multiplayer(mp):
 	multiplayer = mp
 	add_child(multiplayer)
 	multiplayer.connect('peers_changed', self, '_peers_changed')
-	multiplayer.start()
 
 
 func _prestart(connection_type):
 	"""
-	Called by self before starting.
+	Called by self before starting. Set multiplayer options when this is
+	called such as ipaddress and max peers.
+
+	Cancel start by calling start_cancel().
 	@Override
-	@return Bool
-	  true if can start,
-	  false if cannot
 	"""
 	print('Lobby Prestart')
-	return true
 
 
 func _started():
