@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Multiplayer/Multiplayer.gd" type="Script" id=1]
+[ext_resource path="res://Multiplayer/registry.gd" type="Script" id=2]
+[ext_resource path="res://Multiplayer/NetworkStarter.gd" type="Script" id=3]
+
+[node name="Multiplayer" type="Node" index="0"]
+
+script = ExtResource( 1 )
+max_peers = 32
+port = 10320
+ipaddress = "127.0.0.1"
+
+[node name="Registry" type="Node" parent="." index="0"]
+
+script = ExtResource( 2 )
+
+[node name="NetworkStarter" type="Node" parent="." index="1"]
+
+script = ExtResource( 3 )
+
+

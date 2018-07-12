@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=2]
 
-[ext_resource path="res://Lobby/lobby_ui.gd" type="Script" id=1]
+[ext_resource path="res://Multiplayer/Lobby/example/lobby_ui.gd" type="Script" id=1]
 
 [sub_resource type="ButtonGroup" id=1]
 
@@ -66,7 +66,7 @@ caret_blink_speed = 0.65
 caret_position = 0
 _sections_unfolded = [ "Placeholder" ]
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ui/VBoxContainer" index="1"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="ui/VBoxContainer" index="1"]
 
 editor/display_folded = true
 anchor_left = 0.0
@@ -75,7 +75,132 @@ anchor_right = 0.0
 anchor_bottom = 0.0
 margin_top = 28.0
 margin_right = 492.0
-margin_bottom = 48.0
+margin_bottom = 52.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 1
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+alignment = 0
+
+[node name="Label" type="Label" parent="ui/VBoxContainer/HBoxContainer2" index="0"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 5.0
+margin_right = 141.0
+margin_bottom = 19.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+text = "ipaddress (client only)"
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="ipaddress_line" type="LineEdit" parent="ui/VBoxContainer/HBoxContainer2" index="1"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 145.0
+margin_right = 274.0
+margin_bottom = 24.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 1
+size_flags_horizontal = 3
+size_flags_vertical = 3
+focus_mode = 2
+context_menu_enabled = true
+placeholder_alpha = 0.6
+caret_blink = false
+caret_blink_speed = 0.65
+caret_position = 0
+
+[node name="VSeparator" type="VSeparator" parent="ui/VBoxContainer/HBoxContainer2" index="2"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 278.0
+margin_right = 328.0
+margin_bottom = 24.0
+rect_min_size = Vector2( 50, 0 )
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+_sections_unfolded = [ "Rect" ]
+
+[node name="Label2" type="Label" parent="ui/VBoxContainer/HBoxContainer2" index="3"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 332.0
+margin_top = 5.0
+margin_right = 358.0
+margin_bottom = 19.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 2
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 4
+text = "port"
+percent_visible = 1.0
+lines_skipped = 0
+max_lines_visible = -1
+
+[node name="port_spinbox" type="SpinBox" parent="ui/VBoxContainer/HBoxContainer2" index="4"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 362.0
+margin_right = 492.0
+margin_bottom = 24.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+min_value = 0.0
+max_value = 100000.0
+step = 1.0
+page = 0.0
+value = 0.0
+exp_edit = false
+rounded = false
+editable = true
+prefix = ""
+suffix = ""
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ui/VBoxContainer" index="2"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 56.0
+margin_right = 492.0
+margin_bottom = 76.0
 rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
 mouse_filter = 1
@@ -131,16 +256,16 @@ text = "Join Game"
 flat = false
 align = 1
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ui/VBoxContainer" index="2"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ui/VBoxContainer" index="3"]
 
 editor/display_folded = true
 anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
 anchor_bottom = 0.0
-margin_top = 52.0
+margin_top = 80.0
 margin_right = 492.0
-margin_bottom = 347.0
+margin_bottom = 323.0
 rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = false
 mouse_filter = 1
@@ -177,7 +302,7 @@ anchor_right = 0.0
 anchor_bottom = 0.0
 margin_top = 18.0
 margin_right = 492.0
-margin_bottom = 295.0
+margin_bottom = 243.0
 rect_pivot_offset = Vector2( 0, 0 )
 rect_clip_content = true
 focus_mode = 2
@@ -194,8 +319,34 @@ drop_mode_flags = 0
 select_mode = 0
 _sections_unfolded = [ "Size Flags" ]
 
+[node name="start_butt" type="Button" parent="ui/VBoxContainer" index="4"]
+
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 327.0
+margin_right = 492.0
+margin_bottom = 347.0
+rect_pivot_offset = Vector2( 0, 0 )
+rect_clip_content = false
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 1
+size_flags_vertical = 1
+disabled = true
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+group = null
+text = "Start Game"
+flat = false
+align = 1
+
 [node name="error" type="ColorRect" parent="ui" index="1"]
 
+editor/display_folded = true
 visible = false
 modulate = Color( 1, 1, 1, 0.514 )
 anchor_left = 0.0
@@ -240,11 +391,13 @@ wait_time = 2.0
 one_shot = true
 autostart = false
 
-[connection signal="pressed" from="ui/VBoxContainer/HBoxContainer/host_butt" to="." method="start" binds= [ 0 ]]
+[connection signal="pressed" from="ui/VBoxContainer/HBoxContainer/host_butt" to="." method="start" binds= [ 1 ]]
 
-[connection signal="pressed" from="ui/VBoxContainer/HBoxContainer/join_butt" to="." method="start" binds= [ 1 ]]
+[connection signal="pressed" from="ui/VBoxContainer/HBoxContainer/join_butt" to="." method="start" binds= [ 2 ]]
 
 [connection signal="item_edited" from="ui/VBoxContainer/VBoxContainer/Tree" to="." method="_on_tree_item_edited"]
+
+[connection signal="pressed" from="ui/VBoxContainer/start_butt" to="." method="_on_start_butt_pressed"]
 
 [connection signal="timeout" from="ui/error/Timer" to="ui/error" method="hide"]
 

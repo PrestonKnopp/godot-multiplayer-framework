@@ -1,14 +1,15 @@
-extends 'Lobby.gd'
+extends '../Lobby.gd'
 
-# TODO: write custom lobby and gameplay setup that loosely resembles age of
-# empires' lobby.
+signal start_game(this)
+
+var players_ready = []
 
 
 func _ready():
 	refresh()
 
 
-func _peers_changed():
+func _peers_changed(multiplayer):
 	refresh()
 
 
@@ -18,6 +19,13 @@ func _prestart(connection_type):
 		start_cancel()
 	else:
 		$ui/VBoxContainer/username.editable = false
+		var ipaddress = $ui/VBoxContainer/HBoxContainer2/ipaddress_line.text
+		var port = $ui/VBoxContainer/HBoxContainer2/port_spinbox.value
+		if ipaddress.is_valid_ip_address():
+			multiplayer.ipaddress = ipaddress
+		if port != 0:
+			multiplayer.port = port
+		print('port: ', multiplayer.port, ', ipaddress: ', multiplayer.ipaddress)
 
 
 func _started():
@@ -49,6 +57,15 @@ func refresh():
 		var peer_ready = multiplayer.registry.get_peer_data(peer_id, 'user/ready', false)
 		item.set_text(0, str(peer_name))
 		item.set_checked(0, peer_ready)
+		
+		if peer_ready:
+			if not players_ready.has(peer_id):
+				players_ready.append(peer_id)
+		else:
+			if players_ready.has(peer_id):
+				players_ready.erase(peer_id)
+		
+		$ui/VBoxContainer/start_butt.disabled = players_ready.size() != multiplayer.registry.registered.size() or players_ready.empty() and not multiplayer.registry.is_host()
 
 
 func show_error(err):
@@ -68,3 +85,7 @@ func _on_user_data(registry, peer_id, keypath, data_old, data_new):
 	call_deferred('refresh')
 	if peer_id == registry.get_my_id():
 		return
+
+
+func _on_start_butt_pressed():
+	emit_signal('start_game', self)
